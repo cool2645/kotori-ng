@@ -1,0 +1,3 @@
+port = 6666
+allow_origin = ["*"]
+db_file = "core.db"
