@@ -1,3 +1,4 @@
-port = 6666
+port = 2233
 allow_origin = ["*"]
 db_file = "core.db"
+plugin_dir = "plugins/"
