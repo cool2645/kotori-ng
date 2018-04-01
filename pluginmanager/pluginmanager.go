@@ -69,7 +69,6 @@ func (pm *PluginManager) regPlugin(p Plugin, ppath string) () {
 	filename := path.Base(ppath)
 	filename = path.Base(ppath)[0 : len(filename)-len(path.Ext(ppath))]
 	sr := pm.router.PathPrefix("/" + filename).Subrouter()
-	//sr.Methods("GET").Path("/").HandlerFunc(handler.Pong)
 	p.RegRouter(sr)
 	p.InitDB(pm.db)
 	pm.Plugins = append(pm.Plugins, PluginDescriptor{

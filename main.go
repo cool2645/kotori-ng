@@ -26,14 +26,16 @@ var (
 )
 
 func InitRouter() {
+	// Strict slash
+	r.StrictSlash(GlobCfg.USE_STRICT_SLASH)
 	// Static files
 	r.PathPrefix("/static/").
 		Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	// 404
 	r.NotFoundHandler = http.HandlerFunc(handler.NotFoundHandler)
 	// Ping
-	api.Methods("GET").Path("/").HandlerFunc(handler.Pong)
-	v1Api.Methods("GET").Path("/").HandlerFunc(handler.Pong)
+	api.Methods("GET").Path("").HandlerFunc(handler.Pong)
+	v1Api.Methods("GET").Path("").HandlerFunc(handler.Pong)
 }
 
 func main() {
