@@ -8,7 +8,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"io/ioutil"
 	"path"
-	. "github.com/cool2645/kotori-ng/kotori_plugin"
+	. "github.com/cool2645/kotori-ng/kotoriplugin"
 )
 
 const (
@@ -61,16 +61,21 @@ func (pm *PluginManager) loadPlugin(path string) (err error) {
 			fmt.Sprintf("Failed to load plugin %v: PluginInstance not found", path))
 	}
 	// Register Plugin
-	pm.regPlugin(*pi.(*Plugin))
+	pm.regPlugin(*pi.(*Plugin), path)
 	return
 }
 
-func (pm *PluginManager) regPlugin(p Plugin) () {
-	p.RegRouter(pm.router)
+func (pm *PluginManager) regPlugin(p Plugin, ppath string) () {
+	filename := path.Base(ppath)
+	filename = path.Base(ppath)[0 : len(filename)-len(path.Ext(ppath))]
+	sr := pm.router.PathPrefix("/" + filename).Subrouter()
+	//sr.Methods("GET").Path("/").HandlerFunc(handler.Pong)
+	p.RegRouter(sr)
 	p.InitDB(pm.db)
 	pm.Plugins = append(pm.Plugins, PluginDescriptor{
 		Name:    p.GetName(),
 		Version: p.GetVersion(),
+		Path:    ppath,
 	})
 	return
 }

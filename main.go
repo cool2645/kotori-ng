@@ -17,10 +17,12 @@ import (
 )
 
 var (
-	r          = mux.NewRouter().StrictSlash(true)
 	BaseApi    = "/api"
 	BaseApiVer = "/v1"
 	Base       = BaseApi + BaseApiVer
+	r          = mux.NewRouter().StrictSlash(true)
+	api        = r.PathPrefix(BaseApi).Subrouter()
+	v1Api      = api.PathPrefix(BaseApiVer).Subrouter()
 )
 
 func InitRouter() {
@@ -29,9 +31,6 @@ func InitRouter() {
 		Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	// 404
 	r.NotFoundHandler = http.HandlerFunc(handler.NotFoundHandler)
-	// public subrouters
-	api := r.PathPrefix(BaseApi).Subrouter()
-	v1Api := api.PathPrefix(BaseApiVer).Subrouter()
 	// Ping
 	api.Methods("GET").Path("/").HandlerFunc(handler.Pong)
 	v1Api.Methods("GET").Path("/").HandlerFunc(handler.Pong)
@@ -59,7 +58,7 @@ func main() {
 	log.Infof("Router init done")
 
 	// Load plugins
-	pm := pluginmanager.NewPluginManager(GlobCfg.PLUGIN_DIR, r, model.Db)
+	pm := pluginmanager.NewPluginManager(GlobCfg.PLUGIN_DIR, api, model.Db)
 	err = pm.LoadPlugins()
 	if err != nil {
 		log.Fatal(err)
