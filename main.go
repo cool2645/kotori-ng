@@ -3,8 +3,7 @@ package main
 import (
 	"github.com/BurntSushi/toml"
 	. "github.com/cool2645/kotori-ng/config"
-	"github.com/cool2645/kotori-ng/handler"
-	"github.com/cool2645/kotori-ng/model"
+	"github.com/cool2645/kotori-ng/database"
 	"github.com/cool2645/kotori-ng/pluginmanager"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
@@ -14,33 +13,19 @@ import (
 	"github.com/yanzay/log"
 	"net/http"
 	"strconv"
+	"github.com/cool2645/kotori-ng/handler"
 )
 
-var (
-	BaseApi    = "/api"
-	BaseApiVer = "/v1"
-	Base       = BaseApi + BaseApiVer
-	r          = mux.NewRouter().StrictSlash(true)
-	api        = r.PathPrefix(BaseApi).Subrouter()
-	v1Api      = api.PathPrefix(BaseApiVer).Subrouter()
-)
 
 const (
 	pluginPath = "plugins/"
+	BaseApi    = "/api"
 )
 
-func InitRouter() {
-	// Strict slash
-	r.StrictSlash(GlobCfg.USE_STRICT_SLASH)
-	// Static files
-	r.PathPrefix("/static/").
-		Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-	// 404
-	r.NotFoundHandler = http.HandlerFunc(handler.NotFoundHandler)
-	// Ping
-	api.Methods("GET").Path("").HandlerFunc(handler.Pong)
-	v1Api.Methods("GET").Path("").HandlerFunc(handler.Pong)
-}
+var (
+	r          = mux.NewRouter().StrictSlash(true)
+	api        = r.PathPrefix(BaseApi).Subrouter()
+)
 
 func main() {
 	// Load global config
@@ -57,14 +42,20 @@ func main() {
 	}
 	log.Infof("Database init done")
 	db.AutoMigrate()
-	model.Db = db
+	database.DB = db
 
 	// Init global router
-	InitRouter()
+	// Strict slash
+	r.StrictSlash(GlobCfg.USE_STRICT_SLASH)
+	// 404
+	r.NotFoundHandler = http.HandlerFunc(handler.NotFoundHandler)
 	log.Infof("Router init done")
 
+	// Load base services
+	RegRouter()
+
 	// Load plugins
-	pm := pluginmanager.NewPluginManager(pluginPath, api, model.Db)
+	pm := pluginmanager.NewPluginManager(pluginPath, api, database.DB)
 	err = pm.LoadPlugins()
 	if err != nil {
 		log.Fatal(err)
@@ -79,7 +70,6 @@ func main() {
 	h := c.Handler(r)
 
 	n := negroni.New()
-	n.Use(negroni.NewStatic(http.Dir("app")))
 	n.UseHandler(h)
 
 	http.ListenAndServe(":"+strconv.FormatInt(GlobCfg.PORT, 10), n)

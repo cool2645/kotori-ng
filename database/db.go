@@ -1,7 +1,7 @@
-package model
+package database
 
 import (
 	"github.com/jinzhu/gorm"
 )
 
-var Db *gorm.DB
+var DB *gorm.DB
