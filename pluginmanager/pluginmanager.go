@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"path"
 	. "github.com/cool2645/kotori-ng/kotoriplugin"
+	"github.com/yanzay/log"
 )
 
 const (
@@ -61,16 +62,30 @@ func (pm *PluginManager) loadPlugin(path string) (err error) {
 			fmt.Sprintf("Failed to load plugin %v: PluginInstance not found", path))
 	}
 	// Register Plugin
-	pm.regPlugin(*pi.(*Plugin), path)
+	err = pm.regPlugin(*pi.(*Plugin), path)
+	if err != nil {
+		err = errors.Wrap(err,
+			fmt.Sprintf("Failed to register plugin %v: Plugin Internal Error", path))
+	}
 	return
 }
 
-func (pm *PluginManager) regPlugin(p Plugin, ppath string) () {
+func (pm *PluginManager) regPlugin(p Plugin, ppath string) (err error) {
+	err = p.LoadConfig()
+	if err != nil {
+		return
+	}
 	filename := path.Base(ppath)
 	filename = path.Base(ppath)[0 : len(filename)-len(path.Ext(ppath))]
 	sr := pm.router.PathPrefix("/" + filename).Subrouter()
-	p.RegRouter(sr)
-	p.InitDB(pm.db)
+	err = p.RegRouter(sr)
+	if err != nil {
+		return
+	}
+	err = p.InitDB(pm.db)
+	if err != nil {
+		return
+	}
 	pm.Plugins = append(pm.Plugins, PluginDescriptor{
 		Name:    p.GetName(),
 		Version: p.GetVersion(),
@@ -86,7 +101,10 @@ func (pm *PluginManager) LoadPlugins() (err error) {
 	}
 	for _, p := range ps {
 		if path.Ext(p.Name()) == ".so" {
-			pm.loadPlugin(pm.pluginDir + p.Name())
+			e := pm.loadPlugin(pm.pluginDir + p.Name())
+			if e != nil {
+				log.Error(e)
+			}
 		}
 	}
 	return

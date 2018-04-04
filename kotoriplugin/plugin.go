@@ -8,6 +8,7 @@ import (
 type Plugin interface {
 	GetName() string
 	GetVersion() string
-	RegRouter(*mux.Router)
-	InitDB(*gorm.DB)
+	LoadConfig() error
+	RegRouter(*mux.Router) error
+	InitDB(*gorm.DB) error
 }
