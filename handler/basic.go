@@ -11,16 +11,16 @@ func Pong(w http.ResponseWriter, req *http.Request) {
 		"result": true,
 		"msg":    "OK",
 	}
-	ResponseJson(w, res, http.StatusOK)
+	Respond(w, res, http.StatusOK, req)
 	return
 }
 
-func NotFoundHandler(w http.ResponseWriter, r *http.Request) {
+func NotFoundHandler(w http.ResponseWriter, req *http.Request) {
 	res := map[string]interface{}{
 		"code":   http.StatusNotFound,
 		"result": false,
 		"msg":    "Not found",
 	}
-	ResponseJson(w, res, http.StatusNotFound)
+	Respond(w, res, http.StatusNotFound, req)
 	return
 }
