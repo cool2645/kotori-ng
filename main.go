@@ -25,6 +25,10 @@ var (
 	v1Api      = api.PathPrefix(BaseApiVer).Subrouter()
 )
 
+const (
+	pluginPath = "plugins/"
+)
+
 func InitRouter() {
 	// Strict slash
 	r.StrictSlash(GlobCfg.USE_STRICT_SLASH)
@@ -60,7 +64,7 @@ func main() {
 	log.Infof("Router init done")
 
 	// Load plugins
-	pm := pluginmanager.NewPluginManager(GlobCfg.PLUGIN_DIR, api, model.Db)
+	pm := pluginmanager.NewPluginManager(pluginPath, api, model.Db)
 	err = pm.LoadPlugins()
 	if err != nil {
 		log.Fatal(err)
@@ -71,7 +75,6 @@ func main() {
 		AllowedOrigins:   GlobCfg.ALLOW_ORIGIN,
 		AllowedMethods:   []string{"GET", "POST", "OPTIONS", "PUT", "DELETE"},
 		AllowCredentials: true,
-		//AllowedHeaders: []string{""},
 	})
 	h := c.Handler(r)
 

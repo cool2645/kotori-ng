@@ -1,5 +1,4 @@
 port = 2233
 allow_origin = ["*"]
-db_file = "core.db"
-plugin_dir = "plugins/"
+db_file = "kotori-ng.db"
 use_strict_slash = false
