@@ -1,4 +1,13 @@
 port = 2233
 allow_origin = ["*"]
-db_file = "kotori-ng.db"
+
+# Redirect route /xxx to /xxx/
 use_strict_slash = false
+
+# SQLite
+db_file = "kotori-ng.db"
+
+# Randomrize this string to ensure safety
+jwt_key = "J*CGYRaegOy_&)7N1[h&[irSB!)Z[w{D"
+# Token expire time (hours)
+jwt_expiretime = 8760

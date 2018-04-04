@@ -16,15 +16,14 @@ import (
 	"github.com/cool2645/kotori-ng/handler"
 )
 
-
 const (
 	pluginPath = "plugins/"
 	BaseApi    = "/api"
 )
 
 var (
-	r          = mux.NewRouter().StrictSlash(true)
-	api        = r.PathPrefix(BaseApi).Subrouter()
+	r   = mux.NewRouter().StrictSlash(true)
+	api = r.PathPrefix(BaseApi).Subrouter()
 )
 
 func main() {
@@ -41,7 +40,6 @@ func main() {
 		return
 	}
 	log.Infof("Database init done")
-	db.AutoMigrate()
 	database.DB = db
 
 	// Init global router
@@ -53,6 +51,7 @@ func main() {
 
 	// Load base services
 	RegRouter()
+	InitDB(database.DB)
 
 	// Load plugins
 	pm := pluginmanager.NewPluginManager(pluginPath, api, database.DB)
