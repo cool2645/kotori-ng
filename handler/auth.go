@@ -7,7 +7,6 @@ import (
 	"github.com/yanzay/log"
 	. "github.com/cool2645/kotori-ng/httputils"
 	"github.com/cool2645/kotori-ng/auth"
-	"strconv"
 	"github.com/cool2645/kotori-ng/database"
 )
 
@@ -158,7 +157,7 @@ func Register(w http.ResponseWriter, req *http.Request) {
 	Respond(w, res, http.StatusOK, req)
 }
 
-func ChangePrivilege(w http.ResponseWriter, req *http.Request) {
+func PromoteAdmin(w http.ResponseWriter, req *http.Request) {
 	uuid, err := GetUrlParameter(req, "uuid")
 	if err != nil {
 		res := map[string]interface{}{
@@ -187,52 +186,73 @@ func ChangePrivilege(w http.ResponseWriter, req *http.Request) {
 		Respond(w, res, http.StatusUnauthorized, req)
 		return
 	}
-	var isAdmin bool
-	switch req.Header.Get("Content-Type") {
-	case "application/json":
-		var m map[string]interface{}
-		err := json.NewDecoder(req.Body).Decode(&m)
-		if err != nil {
-			log.Error(err)
+	user, err = model.GetUserByUUID(database.DB, uuid)
+	if err != nil {
+		if err.Error() == "GetUserByUUID: record not found" {
 			res := map[string]interface{}{
-				"code":   http.StatusBadRequest,
+				"code":   http.StatusNotFound,
 				"result": false,
-				"msg":    "Error occurred parsing json request",
+				"msg":    "User not found",
 			}
-			Respond(w, res, http.StatusBadRequest, req)
+			Respond(w, res, http.StatusNotFound, req)
+			return
+		} else {
+			res := map[string]interface{}{
+				"code":   http.StatusInternalServerError,
+				"result": false,
+				"msg":    "Error occurred querying user",
+			}
+			Respond(w, res, http.StatusInternalServerError, req)
 			return
 		}
-		isAdmin, err = strconv.ParseBool(m["is_admin"].(string))
-		if err != nil {
-			res := map[string]interface{}{
-				"code":   http.StatusBadRequest,
-				"result": false,
-				"msg":    "Error occurred parsing privilege",
-			}
-			Respond(w, res, http.StatusBadRequest, req)
-			return
+	}
+	err = model.PromoteUserToAdmin(database.DB, &user)
+	if err != nil {
+		res := map[string]interface{}{
+			"code":   http.StatusInternalServerError,
+			"result": false,
+			"msg":    "Error occurred updating user privilege",
 		}
-	default:
-		req.ParseForm()
-		if len(req.Form["is_admin"]) != 1 {
-			res := map[string]interface{}{
-				"code":   http.StatusBadRequest,
-				"result": false,
-				"msg":    "Invalid privilege",
-			}
-			Respond(w, res, http.StatusBadRequest, req)
-			return
+		Respond(w, res, http.StatusInternalServerError, req)
+		return
+	}
+	res := map[string]interface{}{
+		"code":   http.StatusOK,
+		"result": true,
+		"data":   user,
+	}
+	Respond(w, res, http.StatusOK, req)
+	return
+}
+
+func DismissAdmin(w http.ResponseWriter, req *http.Request) {
+	uuid, err := GetUrlParameter(req, "uuid")
+	if err != nil {
+		res := map[string]interface{}{
+			"code":   http.StatusBadRequest,
+			"result": false,
+			"msg":    err.Error(),
 		}
-		isAdmin, err = strconv.ParseBool(req.Form["is_admin"][0])
-		if err != nil {
-			res := map[string]interface{}{
-				"code":   http.StatusBadRequest,
-				"result": false,
-				"msg":    "Error occurred parsing privilege",
-			}
-			Respond(w, res, http.StatusBadRequest, req)
-			return
+		Respond(w, res, http.StatusBadRequest, req)
+		return
+	}
+	ok, user, msg := auth.CheckAuthorization(req)
+	if !ok {
+		res := map[string]interface{}{
+			"code":   http.StatusUnauthorized,
+			"result": false,
+			"msg":    msg,
 		}
+		Respond(w, res, http.StatusUnauthorized, req)
+	}
+	if !user.IsAdmin {
+		res := map[string]interface{}{
+			"code":   http.StatusUnauthorized,
+			"result": false,
+			"msg":    "You have no privilege to do so",
+		}
+		Respond(w, res, http.StatusUnauthorized, req)
+		return
 	}
 	user, err = model.GetUserByUUID(database.DB, uuid)
 	if err != nil {
@@ -254,11 +274,7 @@ func ChangePrivilege(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
-	if isAdmin {
-		err = model.PromoteUserToAdmin(database.DB, &user)
-	} else {
-		err = model.DismissUserFromAdmin(database.DB, &user)
-	}
+	err = model.DismissUserFromAdmin(database.DB, &user)
 	if err != nil {
 		res := map[string]interface{}{
 			"code":   http.StatusInternalServerError,

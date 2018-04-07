@@ -22,7 +22,11 @@ func RegRouter() {
 	v1Api.Methods("GET").Path("/session").HandlerFunc(handler.GetMe)
 	v1Api.Methods("POST").Path("/session").HandlerFunc(handler.Login)
 	v1Api.Methods("POST").Path("/users").HandlerFunc(handler.Register)
-	v1Api.Methods("PATCH").Path("/users/{uuid}").HandlerFunc(handler.ChangePrivilege)
+	v1Api.Methods("PATCH").Path("/users/{uuid}").HandlerFunc(nil)
+	v1Api.Methods("PUT").Path("/users/{uuid}/username").HandlerFunc(nil)
+	v1Api.Methods("PUT").Path("/users/{uuid}/password").HandlerFunc(nil)
+	v1Api.Methods("PUT").Path("/users/{uuid}/admin").HandlerFunc(handler.PromoteAdmin)
+	v1Api.Methods("DELETE").Path("/users/{uuid}/admin").HandlerFunc(handler.DismissAdmin)
 }
 
 func InitDB(db *gorm.DB) {

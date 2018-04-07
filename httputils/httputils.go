@@ -7,6 +7,8 @@ import (
 	"strings"
 	"errors"
 	"strconv"
+	"regexp"
+	"fmt"
 )
 
 func RespondJson(w http.ResponseWriter, data map[string]interface{}, httpStatusCode int) {
@@ -22,6 +24,34 @@ func RespondJson(w http.ResponseWriter, data map[string]interface{}, httpStatusC
 	return
 }
 
+func RespondJsonp(w http.ResponseWriter, data map[string]interface{}, callback string) {
+	resJson, err := json.Marshal(data)
+	if err != nil {
+		log.Error(err)
+		http.Error(w, "Error occurred encoding response.", http.StatusInternalServerError)
+		return
+	}
+	resJson = []byte(fmt.Sprintf("%s(%s)", callback, resJson))
+	w.Header().Set("Content-Type", "application/javascript")
+	w.Write(resJson)
+	return
+}
+
+func RespondFormattedText(w http.ResponseWriter, data map[string]interface{}, httpStatusCode int) {
+	res, err := json.MarshalIndent(data, "", "\t")
+	r, _ := regexp.Compile(`"(\w+)"\s*:`)
+	res = r.ReplaceAll(res, []byte("$1:"))
+	if err != nil {
+		log.Error(err)
+		http.Error(w, "Error occurred encoding response.", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(httpStatusCode)
+	w.Write(res)
+	return
+}
+
 func RespondPlainText(w http.ResponseWriter, data string, httpStatusCode int) {
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(httpStatusCode)
@@ -33,6 +63,8 @@ func Respond(w http.ResponseWriter, data map[string]interface{}, httpStatusCode 
 	acc := r.Header.Get("Accept")
 	if strings.Contains(acc, "application/json") {
 		RespondJson(w, data, httpStatusCode)
+	} else if strings.Contains(acc, "text/plain") || strings.Contains(acc, "text/html") {
+		RespondFormattedText(w, data , httpStatusCode)
 	} else {
 		RespondPlainText(w, "406 Not Acceptable" , http.StatusNotAcceptable)
 	}
