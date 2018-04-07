@@ -19,7 +19,7 @@ func NotFoundHandler(w http.ResponseWriter, req *http.Request) {
 	res := map[string]interface{}{
 		"code":   http.StatusNotFound,
 		"result": false,
-		"msg":    "Not found",
+		"msg":    "404 Not Found",
 	}
 	Respond(w, res, http.StatusNotFound, req)
 	return

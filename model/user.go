@@ -37,12 +37,31 @@ func GetUserByUUID(db *gorm.DB, UUID string) (user User, err error) {
 	return
 }
 
-func StoreUser(db *gorm.DB, user User) (newUser User, err error) {
-	err = db.Create(&user).Error
+func StoreUser(db *gorm.DB, user *User) (err error) {
+	err = db.Create(user).Error
 	if err != nil {
 		err = errors.Wrap(err, "StoreUser")
 		return
 	}
-	newUser = user
+	return
+}
+
+func PromoteUserToAdmin(db *gorm.DB, user *User) (err error) {
+	user.IsAdmin = true
+	db.Save(user)
+	if err != nil {
+		err = errors.Wrap(err, "PromoteUserToAdmin")
+		return
+	}
+	return
+}
+
+func DismissUserFromAdmin(db *gorm.DB, user *User) (err error) {
+	user.IsAdmin = false
+	db.Save(user)
+	if err != nil {
+		err = errors.Wrap(err, "DismissUserFromAdmin")
+		return
+	}
 	return
 }

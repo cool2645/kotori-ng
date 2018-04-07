@@ -10,6 +10,7 @@ import (
 	. "github.com/cool2645/kotori-ng/config"
 	"fmt"
 	"github.com/satori/go.uuid"
+	"net/http"
 )
 
 func checkCredential(username string, password string) (isValid bool, user model.User, err error) {
@@ -67,7 +68,7 @@ func CheckToken(tokenString string) (ok bool, user model.User, msg string) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
 		// hmacSampleSecret is a []byte containing your secret, e.g. []byte("my_secret_key")
@@ -87,7 +88,14 @@ func CheckToken(tokenString string) (ok bool, user model.User, msg string) {
 	return
 }
 
-func MakeUser(user model.User) (newUser model.User, err error) {
+func CheckAuthorization(req *http.Request) (bool, model.User, string) {
+	authorization := req.Header.Get("Authorization")
+	var tokenStr string
+	fmt.Sscanf(authorization, "Bearer %s", &tokenStr)
+	return CheckToken(tokenStr)
+}
+
+func MakeUser(user *model.User) (err error) {
 	u2, err := uuid.NewV4()
 	if err != nil {
 		err = errors.Wrap(err, "MakeUser")
@@ -101,7 +109,7 @@ func MakeUser(user model.User) (newUser model.User, err error) {
 	}
 	user.Password = string(hash)
 	user.IsAdmin = false
-	newUser, err = model.StoreUser(database.DB, user)
+	err = model.StoreUser(database.DB, user)
 	if err != nil {
 		err = errors.Wrap(err, "MakeUser")
 		return

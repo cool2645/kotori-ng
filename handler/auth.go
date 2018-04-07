@@ -7,7 +7,8 @@ import (
 	"github.com/yanzay/log"
 	. "github.com/cool2645/kotori-ng/httputils"
 	"github.com/cool2645/kotori-ng/auth"
-	"fmt"
+	"strconv"
+	"github.com/cool2645/kotori-ng/database"
 )
 
 func Login(w http.ResponseWriter, req *http.Request) {
@@ -69,10 +70,7 @@ func Login(w http.ResponseWriter, req *http.Request) {
 }
 
 func GetMe(w http.ResponseWriter, req *http.Request) {
-	authorization := req.Header.Get("Authorization")
-	var tokenStr string
-	fmt.Sscanf(authorization, "Bearer %s", &tokenStr)
-	if ok, user, msg := auth.CheckToken(tokenStr); ok {
+	if ok, user, msg := auth.CheckAuthorization(req); ok {
 		user.Password = ""
 		res := map[string]interface{}{
 			"code":   http.StatusOK,
@@ -131,7 +129,7 @@ func Register(w http.ResponseWriter, req *http.Request) {
 			user.Name = req.Form["name"][0]
 		}
 	}
-	user, err := auth.MakeUser(user)
+	err := auth.MakeUser(&user)
 	user.Password = ""
 	if err != nil {
 		switch err.Error() {
@@ -158,4 +156,123 @@ func Register(w http.ResponseWriter, req *http.Request) {
 		"data":   user,
 	}
 	Respond(w, res, http.StatusOK, req)
+}
+
+func ChangePrivilege(w http.ResponseWriter, req *http.Request) {
+	uuid, err := GetUrlParameter(req, "uuid")
+	if err != nil {
+		res := map[string]interface{}{
+			"code":   http.StatusBadRequest,
+			"result": false,
+			"msg":    err.Error(),
+		}
+		Respond(w, res, http.StatusBadRequest, req)
+		return
+	}
+	ok, user, msg := auth.CheckAuthorization(req)
+	if !ok {
+		res := map[string]interface{}{
+			"code":   http.StatusUnauthorized,
+			"result": false,
+			"msg":    msg,
+		}
+		Respond(w, res, http.StatusUnauthorized, req)
+	}
+	if !user.IsAdmin {
+		res := map[string]interface{}{
+			"code":   http.StatusUnauthorized,
+			"result": false,
+			"msg":    "You have no privilege to do so",
+		}
+		Respond(w, res, http.StatusUnauthorized, req)
+		return
+	}
+	var isAdmin bool
+	switch req.Header.Get("Content-Type") {
+	case "application/json":
+		var m map[string]interface{}
+		err := json.NewDecoder(req.Body).Decode(&m)
+		if err != nil {
+			log.Error(err)
+			res := map[string]interface{}{
+				"code":   http.StatusBadRequest,
+				"result": false,
+				"msg":    "Error occurred parsing json request",
+			}
+			Respond(w, res, http.StatusBadRequest, req)
+			return
+		}
+		isAdmin, err = strconv.ParseBool(m["is_admin"].(string))
+		if err != nil {
+			res := map[string]interface{}{
+				"code":   http.StatusBadRequest,
+				"result": false,
+				"msg":    "Error occurred parsing privilege",
+			}
+			Respond(w, res, http.StatusBadRequest, req)
+			return
+		}
+	default:
+		req.ParseForm()
+		if len(req.Form["is_admin"]) != 1 {
+			res := map[string]interface{}{
+				"code":   http.StatusBadRequest,
+				"result": false,
+				"msg":    "Invalid privilege",
+			}
+			Respond(w, res, http.StatusBadRequest, req)
+			return
+		}
+		isAdmin, err = strconv.ParseBool(req.Form["is_admin"][0])
+		if err != nil {
+			res := map[string]interface{}{
+				"code":   http.StatusBadRequest,
+				"result": false,
+				"msg":    "Error occurred parsing privilege",
+			}
+			Respond(w, res, http.StatusBadRequest, req)
+			return
+		}
+	}
+	user, err = model.GetUserByUUID(database.DB, uuid)
+	if err != nil {
+		if err.Error() == "GetUserByUUID: record not found" {
+			res := map[string]interface{}{
+				"code":   http.StatusNotFound,
+				"result": false,
+				"msg":    "User not found",
+			}
+			Respond(w, res, http.StatusNotFound, req)
+			return
+		} else {
+			res := map[string]interface{}{
+				"code":   http.StatusInternalServerError,
+				"result": false,
+				"msg":    "Error occurred querying user",
+			}
+			Respond(w, res, http.StatusInternalServerError, req)
+			return
+		}
+	}
+	if isAdmin {
+		err = model.PromoteUserToAdmin(database.DB, &user)
+	} else {
+		err = model.DismissUserFromAdmin(database.DB, &user)
+	}
+	if err != nil {
+		res := map[string]interface{}{
+			"code":   http.StatusInternalServerError,
+			"result": false,
+			"msg":    "Error occurred updating user privilege",
+		}
+		Respond(w, res, http.StatusInternalServerError, req)
+		return
+	}
+	res := map[string]interface{}{
+		"code":   http.StatusOK,
+		"result": true,
+		"data":   user,
+	}
+	Respond(w, res, http.StatusOK, req)
+	return
 }
