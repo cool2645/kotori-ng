@@ -7,6 +7,11 @@ use_strict_slash = false
 # SQLite
 db_file = "kotori-ng.db"
 
+# Lock file
+# Without lock file user will be registered as administrator
+# The program will write lock file automatically when the first administrator registered
+lock_file = "admin.lck"
+
 # Randomrize this string to ensure safety
 jwt_key = "J*CGYRaegOy_&)7N1[h&[irSB!)Z[w{D"
 # Token expire time (hours)

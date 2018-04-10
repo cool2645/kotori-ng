@@ -9,7 +9,6 @@ import (
 	"time"
 	. "github.com/cool2645/kotori-ng/config"
 	"fmt"
-	"github.com/satori/go.uuid"
 	"net/http"
 )
 
@@ -93,26 +92,4 @@ func CheckAuthorization(req *http.Request) (bool, model.User, string) {
 	var tokenStr string
 	fmt.Sscanf(authorization, "Bearer %s", &tokenStr)
 	return CheckToken(tokenStr)
-}
-
-func MakeUser(user *model.User) (err error) {
-	u2, err := uuid.NewV4()
-	if err != nil {
-		err = errors.Wrap(err, "MakeUser")
-		return
-	}
-	user.UUID = u2.String()
-	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	if err != nil {
-		err = errors.Wrap(err, "MakeUser")
-		return
-	}
-	user.Password = string(hash)
-	user.IsAdmin = false
-	err = model.StoreUser(database.DB, user)
-	if err != nil {
-		err = errors.Wrap(err, "MakeUser")
-		return
-	}
-	return
 }

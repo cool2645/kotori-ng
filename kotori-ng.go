@@ -17,14 +17,15 @@ var (
 )
 
 func RegRouter() {
-	// Ping
 	v1Api.Methods("GET").Path("").HandlerFunc(handler.Pong)
 	v1Api.Methods("GET").Path("/session").HandlerFunc(handler.GetMe)
 	v1Api.Methods("POST").Path("/session").HandlerFunc(handler.Login)
 	v1Api.Methods("POST").Path("/users").HandlerFunc(handler.Register)
-	v1Api.Methods("PATCH").Path("/users/{uuid}").HandlerFunc(nil)
-	v1Api.Methods("PUT").Path("/users/{uuid}/username").HandlerFunc(nil)
-	v1Api.Methods("PUT").Path("/users/{uuid}/password").HandlerFunc(nil)
+	v1Api.Methods("GET").Path("/users").HandlerFunc(handler.ListUsers)
+	v1Api.Methods("GET").Path("/users/{username}").HandlerFunc(handler.GetUserByUsername)
+	v1Api.Methods("PATCH").Path("/users/{uuid}").HandlerFunc(handler.UpdateUser)
+	v1Api.Methods("PUT").Path("/users/{uuid}/username").HandlerFunc(handler.UpdateUserSetUsername)
+	v1Api.Methods("PUT").Path("/users/{uuid}/password").HandlerFunc(handler.UpdateUserSetPassword)
 	v1Api.Methods("PUT").Path("/users/{uuid}/admin").HandlerFunc(handler.PromoteAdmin)
 	v1Api.Methods("DELETE").Path("/users/{uuid}/admin").HandlerFunc(handler.DismissAdmin)
 }

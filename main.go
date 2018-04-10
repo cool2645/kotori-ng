@@ -71,6 +71,7 @@ func main() {
 	n := negroni.New()
 	n.UseHandler(h)
 
+	log.Infof("Start listening at port %d", GlobCfg.PORT)
 	http.ListenAndServe(":"+strconv.FormatInt(GlobCfg.PORT, 10), n)
 	return
 }
