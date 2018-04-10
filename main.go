@@ -47,6 +47,7 @@ func main() {
 	r.StrictSlash(GlobCfg.USE_STRICT_SLASH)
 	// 404
 	r.NotFoundHandler = http.HandlerFunc(handler.NotFoundHandler)
+	r.MethodNotAllowedHandler = http.HandlerFunc(handler.MethodNotAllowedHandler)
 	log.Infof("Router init done")
 
 	// Load base services

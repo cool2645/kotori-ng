@@ -24,3 +24,13 @@ func NotFoundHandler(w http.ResponseWriter, req *http.Request) {
 	Respond(w, res, http.StatusNotFound, req)
 	return
 }
+
+func MethodNotAllowedHandler(w http.ResponseWriter, req *http.Request) {
+	res := map[string]interface{}{
+		"code":   http.StatusMethodNotAllowed,
+		"result": false,
+		"msg":    "405 Method Not Allowed",
+	}
+	Respond(w, res, http.StatusMethodNotAllowed, req)
+	return
+}

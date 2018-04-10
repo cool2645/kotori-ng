@@ -22,11 +22,22 @@ type User struct {
 	DeletedAt *time.Time `json:"deleted_at"`
 }
 
+var nonPasswordFields = []string{
+	"id",
+	"uuid",
+	"name",
+	"username",
+	"is_admin",
+	"created_at",
+	"updated_at",
+	"deleted_at",
+}
+
 func ListUsers(db *gorm.DB, page uint, perPage uint, orderBy string, order string) (users []User, total uint, err error) {
 	if perPage == 0 {
 		perPage = 15
 	}
-	err = db.Order(orderBy + " " + order).Limit(perPage).Offset((page - 1) * perPage).Find(&users).Error
+	err = db.Select(nonPasswordFields).Order(orderBy + " " + order).Limit(perPage).Offset((page - 1) * perPage).Find(&users).Error
 	if err != nil {
 		err = errors.Wrap(err, "ListUsers")
 		return
@@ -101,7 +112,7 @@ func MakeAdmin(user *User) (err error) {
 		return
 	}
 	user.Password = string(hash)
-	user.IsAdmin = false
+	user.IsAdmin = true
 	err = StoreUser(database.DB, user)
 	if err != nil {
 		err = errors.Wrap(err, "MakeAdmin")
@@ -110,7 +121,7 @@ func MakeAdmin(user *User) (err error) {
 	return
 }
 
-func UpdateUser(db *gorm.DB, user *User, patch map[string]interface{}) (err error) {
+func UpdateUser(db *gorm.DB, user *User, patch map[string]string) (err error) {
 	err = db.Model(user).Select("name").Updates(patch).Error
 	if err != nil {
 		err = errors.Wrap(err, "UpdateUser")

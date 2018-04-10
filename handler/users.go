@@ -87,11 +87,18 @@ func Register(w http.ResponseWriter, req *http.Request) {
 		switch err.Error() {
 		case "MakeUser: StoreUser: UNIQUE constraint failed: users.username":
 			res := map[string]interface{}{
-				"code":   http.StatusBadRequest,
+				"code":   http.StatusOK,
 				"result": false,
 				"msg":    "This username has already been used",
 			}
-			Respond(w, res, http.StatusBadRequest, req)
+			Respond(w, res, http.StatusOK, req)
+		case "MakeAdmin: StoreUser: UNIQUE constraint failed: users.username":
+			res := map[string]interface{}{
+				"code":   http.StatusOK,
+				"result": false,
+				"msg":    "This username has already been used",
+			}
+			Respond(w, res, http.StatusOK, req)
 		default:
 			res := map[string]interface{}{
 				"code":   http.StatusInternalServerError,
@@ -103,11 +110,76 @@ func Register(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	res := map[string]interface{}{
+		"code":   http.StatusCreated,
+		"result": true,
+		"data":   user,
+	}
+	Respond(w, res, http.StatusCreated, req)
+}
+
+func GetUserByUUID(w http.ResponseWriter, req *http.Request) {
+	// Parse Request
+	uuid, err := GetUrlParameter(req, "uuid")
+	if err != nil {
+		res := map[string]interface{}{
+			"code":   http.StatusBadRequest,
+			"result": false,
+			"msg":    err.Error(),
+		}
+		Respond(w, res, http.StatusBadRequest, req)
+		return
+	}
+	// Check Privilege
+	ok, user, msg := auth.CheckAuthorization(req)
+	if !ok {
+		res := map[string]interface{}{
+			"code":   http.StatusUnauthorized,
+			"result": false,
+			"msg":    msg,
+		}
+		Respond(w, res, http.StatusUnauthorized, req)
+		return
+	}
+	if !user.IsAdmin && user.UUID != uuid {
+		res := map[string]interface{}{
+			"code":   http.StatusUnauthorized,
+			"result": false,
+			"msg":    "You have no privilege to do so",
+		}
+		Respond(w, res, http.StatusUnauthorized, req)
+		return
+	}
+	if user.UUID != uuid {
+		user, err = model.GetUserByUUID(database.DB, uuid)
+		if err != nil {
+			if err.Error() == "GetUserByUUID: record not found" {
+				res := map[string]interface{}{
+					"code":   http.StatusNotFound,
+					"result": false,
+					"msg":    "User not found",
+				}
+				Respond(w, res, http.StatusNotFound, req)
+				return
+			} else {
+				res := map[string]interface{}{
+					"code":   http.StatusInternalServerError,
+					"result": false,
+					"msg":    "Error occurred querying user",
+				}
+				Respond(w, res, http.StatusInternalServerError, req)
+				return
+			}
+		}
+	}
+	// Process
+	user.Password = ""
+	res := map[string]interface{}{
 		"code":   http.StatusOK,
 		"result": true,
 		"data":   user,
 	}
 	Respond(w, res, http.StatusOK, req)
+	return
 }
 
 func GetUserByUsername(w http.ResponseWriter, req *http.Request) {
@@ -272,7 +344,7 @@ func ListUsers(w http.ResponseWriter, req *http.Request)  {
 		return
 	}
 	// Parse Request
-	var form map[string]string
+	form := make(map[string]string)
 	switch req.Header.Get("Content-Type") {
 	case "application/json":
 		err := json.NewDecoder(req.Body).Decode(&form)
@@ -398,7 +470,7 @@ func UpdateUser(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 	// Parse Request
-	var patch map[string]interface{}
+	patch := make(map[string]string)
 	switch req.Header.Get("Content-Type") {
 	case "application/json":
 		err := json.NewDecoder(req.Body).Decode(&patch)
@@ -496,7 +568,7 @@ func UpdateUserSetUsername(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 	// Parse Request
-	var patch map[string]string
+	patch := make(map[string]string)
 	switch req.Header.Get("Content-Type") {
 	case "application/json":
 		err := json.NewDecoder(req.Body).Decode(&patch)
@@ -531,6 +603,15 @@ func UpdateUserSetUsername(w http.ResponseWriter, req *http.Request) {
 	// Process
 	err = model.UpdateUserSetUsername(database.DB, &user, patch["username"])
 	if err != nil {
+		if err.Error() == "UpdateUserSetUsername: UNIQUE constraint failed: users.username" {
+			res := map[string]interface{}{
+				"code":   http.StatusOK,
+				"result": false,
+				"msg":    "This username has already been used",
+			}
+			Respond(w, res, http.StatusOK, req)
+			return
+		}
 		res := map[string]interface{}{
 			"code":   http.StatusInternalServerError,
 			"result": false,
@@ -604,7 +685,7 @@ func UpdateUserSetPassword(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 	// Parse Request
-	var patch map[string]string
+	patch := make(map[string]string)
 	switch req.Header.Get("Content-Type") {
 	case "application/json":
 		err := json.NewDecoder(req.Body).Decode(&patch)

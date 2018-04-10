@@ -1,4 +1,5 @@
 .idea/
 config.toml
 *.db
+*.lck
 kotori-ng

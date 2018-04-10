@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"regexp"
 	"fmt"
+	"github.com/gorilla/mux"
 )
 
 func RespondJson(w http.ResponseWriter, data map[string]interface{}, httpStatusCode int) {
@@ -114,12 +115,11 @@ func GetIntUrlParameter(r *http.Request, key string) (value int, err error) {
 }
 
 func GetUrlParameter(r *http.Request, key string) (value string, err error) {
-	query := r.URL.Query()
-	val := query[key]
-	if val == nil || len(val) == 0 {
+	query := mux.Vars(r)
+	value, ok := query[key]
+	if !ok || value == "" {
 		err = errors.New("cannot retrieve requested key")
 		return
 	}
-	value = val[0]
 	return
 }
