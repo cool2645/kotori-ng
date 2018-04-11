@@ -18,7 +18,7 @@ import (
 
 const (
 	pluginPath = "plugins/"
-	BaseApi    = "/api"
+	BaseApi    = "/"
 )
 
 var (
