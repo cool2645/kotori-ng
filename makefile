@@ -2,6 +2,7 @@ file := plugins.txt
 path := plugins
 pluginlist := $(shell cat ${file})
 all: so
+	 go get -d -v; \
 	 go build
 so:
 	 for plugin in $(pluginlist); do \
