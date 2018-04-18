@@ -6,9 +6,16 @@ import (
 )
 
 type Plugin interface {
-	GetName() string
-	GetVersion() string
+	GetPluginInfo() PluginInfo
 	LoadConfig() error
 	RegRouter(*mux.Router) error
 	InitDB(*gorm.DB) error
+}
+
+type PluginInfo struct {
+	Name    string `json:"name"`
+	Author  string `json:"author"`
+	Version string `json:"version"`
+	License string `json:"license"`
+	URL     string `json:"url"`
 }

@@ -18,6 +18,7 @@ var (
 
 func RegRouter() {
 	v1Api.Methods("GET").Path("").HandlerFunc(handler.Pong)
+	v1Api.Methods("GET").Path("/status").HandlerFunc(handler.GetStatus)
 	v1Api.Methods("GET").Path("/session").HandlerFunc(handler.GetMe)
 	v1Api.Methods("POST").Path("/session").HandlerFunc(handler.Login)
 	v1Api.Methods("POST").Path("/users").HandlerFunc(handler.Register)

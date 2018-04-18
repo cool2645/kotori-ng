@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"strconv"
 	"github.com/cool2645/kotori-ng/handler"
+	"github.com/cool2645/kotori-ng/status"
 )
 
 const (
@@ -55,8 +56,8 @@ func main() {
 	InitDB(database.DB)
 
 	// Load plugins
-	pm := pluginmanager.NewPluginManager(pluginPath, api, database.DB)
-	err = pm.LoadPlugins()
+	pluginmanager.PM = pluginmanager.NewPluginManager(pluginPath, api, database.DB)
+	err = pluginmanager.PM.LoadPlugins()
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -70,6 +71,7 @@ func main() {
 	h := c.Handler(r)
 
 	n := negroni.New()
+	n.Use(status.Stat)
 	n.UseHandler(h)
 
 	log.Infof("Start listening at port %d", GlobCfg.PORT)

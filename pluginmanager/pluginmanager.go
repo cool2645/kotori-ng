@@ -25,9 +25,8 @@ type PluginManager struct {
 }
 
 type PluginDescriptor struct {
-	Name    string
-	Version string
-	Path    string
+	Info PluginInfo
+	Path string
 }
 
 func NewPluginManager(path string, r *mux.Router, d *gorm.DB) (*PluginManager) {
@@ -87,9 +86,8 @@ func (pm *PluginManager) regPlugin(p Plugin, ppath string) (err error) {
 		return
 	}
 	pm.Plugins = append(pm.Plugins, PluginDescriptor{
-		Name:    p.GetName(),
-		Version: p.GetVersion(),
-		Path:    ppath,
+		Info: p.GetPluginInfo(),
+		Path: ppath,
 	})
 	return
 }
@@ -109,3 +107,5 @@ func (pm *PluginManager) LoadPlugins() (err error) {
 	}
 	return
 }
+
+var PM *PluginManager
