@@ -8,10 +8,14 @@ import (
 
 func GetStatus(w http.ResponseWriter, req *http.Request) {
 	hss := status.Stat.Data()
+	pis := status.GetPluginInfo()
 	res := map[string]interface{}{
 		"code":   http.StatusOK,
 		"result": true,
-		"data":   hss,
+		"data":   map[string]interface{}{
+			"basic": hss,
+			"plugins": pis,
+		},
 	}
 	httputils.Respond(w, res, http.StatusOK, req)
 	return

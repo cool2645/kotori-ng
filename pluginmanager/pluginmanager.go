@@ -12,10 +12,6 @@ import (
 	"github.com/yanzay/log"
 )
 
-const (
-	defaultPluginNum = 10
-)
-
 type PluginManager struct {
 	pluginDir   string
 	pluginCount int
@@ -35,7 +31,7 @@ func NewPluginManager(path string, r *mux.Router, d *gorm.DB) (*PluginManager) {
 		pluginCount: 0,
 		router:      r,
 		db:          d,
-		Plugins:     make([]PluginDescriptor, defaultPluginNum),
+		Plugins:     make([]PluginDescriptor, 0),
 	}
 	return &pm
 }
