@@ -8,7 +8,7 @@ var (
 	vi            = VersionInfo{
 		Name:    "kotori-ng",
 		Author:  "2645 Studio",
-		Version: "1.0-pre-alpha.1",
+		Version: "v1.0-pre-alpha.2",
 		License: "Unlicense",
 		URL:     "https://github.com/cool2645/kotori-ng",
 	}
