@@ -3,6 +3,7 @@ package kotoriplugin
 import (
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
+	"github.com/cool2645/kotori-ng/version"
 )
 
 type Plugin interface {
@@ -13,9 +14,10 @@ type Plugin interface {
 }
 
 type PluginInfo struct {
-	Name    string `json:"name"`
-	Author  string `json:"author"`
-	Version string `json:"version"`
-	License string `json:"license"`
-	URL     string `json:"url"`
+	BasicInfo BasicInfo `json:"basic_info"`
+	BuildInfo BuildInfo `json:"build_info"`
 }
+
+type BasicInfo version.VersionInfo
+
+type BuildInfo version.BuildInfo
